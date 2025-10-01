@@ -30,7 +30,36 @@ export async function middleware(request: NextRequest) {
   );
 
   // Refresh session if expired
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Protected routes that require authentication
+  const protectedRoutes = ['/dashboard'];
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    request.nextUrl.pathname.startsWith(route)
+  );
+
+  // Auth routes that should redirect to dashboard if already logged in
+  const authRoutes = ['/auth/signin', '/auth/signup'];
+  const isAuthRoute = authRoutes.some((route) =>
+    request.nextUrl.pathname.startsWith(route)
+  );
+
+  // Redirect to sign in if trying to access protected route without session
+  if (isProtectedRoute && !user) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/auth/signin';
+    redirectUrl.searchParams.set('redirectedFrom', request.nextUrl.pathname);
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  // Redirect to dashboard if trying to access auth pages while logged in
+  if (isAuthRoute && user) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/dashboard';
+    return NextResponse.redirect(redirectUrl);
+  }
 
   return supabaseResponse;
 }
