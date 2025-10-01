@@ -197,7 +197,7 @@ export async function PUT(req: NextRequest) {
         conversationHistory: session.conversation_history,
         remainingQuestions: questionTemplate.questions.filter(
           (q: Question) => !session.conversation_history.some(
-            (msg: any) => msg.metadata?.question_id === q.id
+            (msg: { metadata?: { question_id?: string } }) => msg.metadata?.question_id === q.id
           )
         ),
         currentQuestionId: session.conversation_history[session.conversation_history.length - 1]?.metadata?.question_id || null,
@@ -213,7 +213,12 @@ export async function PUT(req: NextRequest) {
     const progress = manager.getProgress(totalQuestions);
 
     // Update session in database
-    const updateData: any = {
+    const updateData: {
+      conversation_history: unknown;
+      current_question_index: number;
+      status?: string;
+      completed_at?: string;
+    } = {
       conversation_history: manager.getHistory(),
       current_question_index: totalQuestions - manager.getRemainingQuestionsCount(),
     };
@@ -276,7 +281,20 @@ export async function PUT(req: NextRequest) {
       ? (questionTemplate.questions as Question[]).find(q => q.id === questionId)
       : null;
 
-    const response: any = {
+    const response: {
+      success: boolean;
+      message: string;
+      isFollowUp: boolean;
+      nextQuestion: { id: string; text: string; type: string } | null;
+      isComplete: boolean;
+      progress: number;
+      questionsRemaining: number;
+      sessionSummary?: {
+        totalScore: number;
+        questionsAnswered: number;
+        averageScore: number;
+      };
+    } = {
       success: true,
       message,
       isFollowUp,

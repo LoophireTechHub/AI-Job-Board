@@ -54,8 +54,8 @@ export default function SignInPage() {
         router.push('/dashboard');
         router.refresh();
       }
-    } catch (err: any) {
-      setError(err.message || 'Invalid email or password. Please try again.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid email or password. Please try again.');
     } finally {
       setLoading(false);
     }

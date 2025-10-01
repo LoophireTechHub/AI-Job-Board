@@ -69,7 +69,7 @@ export function parseClaudeJSON<T>(response: Anthropic.Message): T {
     const jsonText = jsonMatch ? jsonMatch[1] : text;
 
     return JSON.parse(jsonText) as T;
-  } catch (error) {
+  } catch {
     console.error('Failed to parse Claude JSON response:', text);
     throw new Error('Invalid JSON response from Claude');
   }

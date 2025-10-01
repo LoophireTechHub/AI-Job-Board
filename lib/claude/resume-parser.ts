@@ -47,7 +47,13 @@ export async function parseResume(params: ParseResumeParams): Promise<ParseResum
       }
     );
 
-    const result = parseClaudeJSON<ResumeData & { job_match_analysis?: any }>(response);
+    const result = parseClaudeJSON<ResumeData & {
+      job_match_analysis?: {
+        match_score?: number;
+        matching_skills?: string[];
+        missing_skills?: string[];
+      }
+    }>(response);
     const latencyMs = Date.now() - startTime;
 
     // Extract job match analysis if present
@@ -56,7 +62,8 @@ export async function parseResume(params: ParseResumeParams): Promise<ParseResum
     const missingSkills = result.job_match_analysis?.missing_skills;
 
     // Remove job_match_analysis from the main data object
-    const { job_match_analysis, ...resumeData } = result as any;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { job_match_analysis, ...resumeData } = result;
 
     // Validate required fields
     if (!resumeData.personal_info || !resumeData.personal_info.name || !resumeData.personal_info.email) {
@@ -78,6 +85,7 @@ export async function parseResume(params: ParseResumeParams): Promise<ParseResum
 }
 
 // Extract text from PDF resume (you'll need a PDF parsing library)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
   // This is a placeholder - implement with a library like pdf-parse
   // npm install pdf-parse @types/pdf-parse
