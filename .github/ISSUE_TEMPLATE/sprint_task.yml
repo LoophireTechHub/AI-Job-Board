@@ -1,0 +1,86 @@
+name: Sprint Task
+description: Create a new task for a sprint
+title: "[TASK] "
+labels: ["sprint-1"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Sprint Task Template
+        Create a task for the current sprint
+
+  - type: dropdown
+    id: sprint
+    attributes:
+      label: Sprint
+      description: Which sprint is this for?
+      options:
+        - Sprint 1 - Foundation
+        - Sprint 2 - Job Management
+        - Sprint 3 - Applications & AI
+        - Sprint 4 - AI Screening
+        - Sprint 5 - Polish & Launch
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      options:
+        - Frontend
+        - Backend
+        - AI
+        - Database
+        - DevOps
+        - Design
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What needs to be built?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: What defines "done"?
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+        - [ ] Criterion 3
+    validations:
+      required: true
+
+  - type: input
+    id: estimate
+    attributes:
+      label: Estimate (Story Points)
+      description: How many story points? (1, 2, 3, 5, 8)
+      placeholder: "3"
+    validations:
+      required: false
+
+  - type: textarea
+    id: technical
+    attributes:
+      label: Technical Details
+      description: Any specific technical notes
+    validations:
+      required: false
