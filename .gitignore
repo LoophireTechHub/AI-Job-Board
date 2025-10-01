@@ -39,3 +39,47 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# documentation temp files
+docs/.obsidian
+docs/**/*.tmp
+docs/**/*.bak
+*.md.backup
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Local development
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database dumps
+*.sql.backup
+*.dump
+
+# Temporary files
+tmp/
+temp/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Sentry
+.sentryclirc
