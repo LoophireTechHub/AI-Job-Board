@@ -61,6 +61,7 @@ export default function SignUpPage() {
           data: {
             full_name: formData.fullName,
           },
+          emailRedirectTo: `${window.location.origin}/dashboard`,
         },
       });
 
