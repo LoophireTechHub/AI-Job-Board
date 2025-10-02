@@ -3,18 +3,15 @@
 import { createBrowserClient } from '@supabase/ssr';
 
 export function createClient() {
-  // Temporarily hardcode to test
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://glulsnyhsfbgtkzqvfym.supabase.co';
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsdWxzbnloc2ZiZ3RrenF2ZnltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzMzg0NjIsImV4cCI6MjA3NDkxNDQ2Mn0.mi44H82NLQ17YSDGnp5IsxiV4frt9w7H44j_TgbU9No';
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   // Debug logging
   console.log('Supabase Client Debug:', {
     urlExists: !!supabaseUrl,
-    urlLength: supabaseUrl?.length,
-    urlFirst20: supabaseUrl?.substring(0, 20),
+    urlValue: supabaseUrl,
     keyExists: !!supabaseKey,
     keyLength: supabaseKey?.length,
-    keyFirst20: supabaseKey?.substring(0, 20),
   });
 
   // Validate environment variables
@@ -30,10 +27,7 @@ export function createClient() {
   const cleanUrl = supabaseUrl.trim();
   const cleanKey = supabaseKey.trim();
 
-  console.log('Creating Supabase client with:', {
-    url: cleanUrl,
-    keyLength: cleanKey.length
-  });
+  console.log('Creating Supabase client with URL:', cleanUrl);
 
   return createBrowserClient(cleanUrl, cleanKey);
 }
