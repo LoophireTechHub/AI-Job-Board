@@ -3,8 +3,9 @@
 import { createBrowserClient } from '@supabase/ssr';
 
 export function createClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // Temporarily hardcode to test
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://glulsnyhsfbgtkzqvfym.supabase.co';
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsdWxzbnloc2ZiZ3RrenF2ZnltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzMzg0NjIsImV4cCI6MjA3NDkxNDQ2Mn0.mi44H82NLQ17YSDGnp5IsxiV4frt9w7H44j_TgbU9No';
 
   // Debug logging
   console.log('Supabase Client Debug:', {
