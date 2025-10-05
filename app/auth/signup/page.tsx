@@ -54,9 +54,6 @@ export default function SignUpPage() {
     setLoading(true);
 
     try {
-      console.log('Attempting signup with email:', formData.email);
-      console.log('Current origin:', window.location.origin);
-
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -67,8 +64,6 @@ export default function SignUpPage() {
         },
       });
 
-      console.log('Signup response:', { data, error: signUpError });
-
       if (signUpError) throw signUpError;
 
       if (data.user) {
@@ -77,7 +72,6 @@ export default function SignUpPage() {
         router.refresh();
       }
     } catch (err) {
-      console.error('Signup error:', err);
       setError(err instanceof Error ? err.message : 'Failed to create account. Please try again.');
     } finally {
       setLoading(false);
