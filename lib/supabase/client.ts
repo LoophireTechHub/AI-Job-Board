@@ -1,6 +1,6 @@
 // Supabase Client for Client-Side Components
 
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 
 export function createClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -11,13 +11,5 @@ export function createClient() {
     throw new Error('Missing Supabase environment variables');
   }
 
-  // Always create a new client - singleton was preventing session persistence
-  return createSupabaseClient(supabaseUrl, supabaseKey, {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true,
-      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    },
-  });
+  return createBrowserClient(supabaseUrl, supabaseKey);
 }
