@@ -2,7 +2,7 @@
 
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 // For use in Server Components and Server Actions
 export async function createServerSupabaseClient() {
@@ -32,9 +32,12 @@ export async function createServerSupabaseClient() {
   );
 }
 
+// Alias for convenience in API routes
+export const createClient = createServerSupabaseClient;
+
 // Service role client for admin operations (use with caution)
 export function createServiceRoleClient() {
-  return createClient(
+  return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_KEY!,
     {
