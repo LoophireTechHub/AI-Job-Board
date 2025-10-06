@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageLoader } from '@/components/ui/loading-spinner';
 import { ErrorMessage } from '@/components/ui/error-message';
+import { Button } from '@/components/ui/button';
+import { Plus, Briefcase } from 'lucide-react';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -112,9 +114,19 @@ export default function DashboardPage() {
                 <div className="bg-blue-100 text-blue-600 rounded-full w-8 h-8 flex items-center justify-center font-bold flex-shrink-0">
                   1
                 </div>
-                <div>
+                <div className="flex-1">
                   <h3 className="font-semibold">Create your first job posting</h3>
-                  <p className="text-sm text-gray-600">Add a job listing to start receiving applications</p>
+                  <p className="text-sm text-gray-600 mb-2">Add a job listing to start receiving applications</p>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => router.push('/dashboard/jobs/new')}>
+                      <Plus className="mr-1 h-3 w-3" />
+                      New Job
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => router.push('/dashboard/jobs')}>
+                      <Briefcase className="mr-1 h-3 w-3" />
+                      View Jobs
+                    </Button>
+                  </div>
                 </div>
               </div>
               <div className="flex items-start gap-3">
