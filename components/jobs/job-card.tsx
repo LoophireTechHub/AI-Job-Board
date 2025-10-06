@@ -32,7 +32,7 @@ export function JobCard({
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <JobStatusBadge status={job.status} />
+              {variant === 'company' && <JobStatusBadge status={job.status} />}
               {job.department && (
                 <span className="text-xs text-gray-500">{job.department}</span>
               )}

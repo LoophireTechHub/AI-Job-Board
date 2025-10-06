@@ -15,9 +15,14 @@ export default function DashboardPage() {
   const [user, setUser] = useState<{ email?: string; user_metadata?: { full_name?: string } } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState({
+    activeJobs: 0,
+    totalApplications: 0,
+    candidatesScreened: 0,
+  });
 
   useEffect(() => {
-    const checkUser = async () => {
+    const fetchData = async () => {
       try {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -33,6 +38,45 @@ export default function DashboardPage() {
         }
 
         setUser(user);
+
+        // Fetch job stats
+        const { count: activeJobCount, error: jobCountError } = await supabase
+          .from('jobs')
+          .select('*', { count: 'exact', head: true })
+          .eq('created_by', user.id)
+          .eq('status', 'active');
+
+        if (jobCountError) {
+          console.error('Error fetching job count:', jobCountError);
+        }
+
+        // First get all job IDs for this user
+        const { data: userJobs, error: jobsError } = await supabase
+          .from('jobs')
+          .select('id')
+          .eq('created_by', user.id);
+
+        let totalApplicationCount = 0;
+        if (!jobsError && userJobs && userJobs.length > 0) {
+          const jobIds = userJobs.map(job => job.id);
+          const { count: appCount, error: appCountError } = await supabase
+            .from('applications')
+            .select('*', { count: 'exact', head: true })
+            .in('job_id', jobIds);
+
+          if (appCountError) {
+            console.error('Error fetching application count:', appCountError);
+          } else {
+            totalApplicationCount = appCount || 0;
+          }
+        }
+
+        setStats({
+          activeJobs: activeJobCount || 0,
+          totalApplications: totalApplicationCount,
+          candidatesScreened: 0, // TODO: Implement when AI screening is ready
+        });
+
         setLoading(false);
       } catch (err) {
         setError('An unexpected error occurred');
@@ -40,7 +84,7 @@ export default function DashboardPage() {
       }
     };
 
-    checkUser();
+    fetchData();
   }, [router, supabase]);
 
   if (loading) {
@@ -75,7 +119,7 @@ export default function DashboardPage() {
               <CardDescription>Create and manage job listings</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-blue-600">0</p>
+              <p className="text-3xl font-bold text-blue-600">{stats.activeJobs}</p>
               <p className="text-sm text-gray-500 mt-2">Active jobs</p>
             </CardContent>
           </Card>
@@ -86,7 +130,7 @@ export default function DashboardPage() {
               <CardDescription>Review candidate applications</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-green-600">0</p>
+              <p className="text-3xl font-bold text-green-600">{stats.totalApplications}</p>
               <p className="text-sm text-gray-500 mt-2">Total applications</p>
             </CardContent>
           </Card>
@@ -97,7 +141,7 @@ export default function DashboardPage() {
               <CardDescription>Automated candidate evaluation</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-purple-600">0</p>
+              <p className="text-3xl font-bold text-purple-600">{stats.candidatesScreened}</p>
               <p className="text-sm text-gray-500 mt-2">Candidates screened</p>
             </CardContent>
           </Card>

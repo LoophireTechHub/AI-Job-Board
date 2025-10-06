@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { generateScreeningQuestions } from '@/lib/actions/generate-questions';
 
 // GET /api/jobs/[id] - Get a single job
 export async function GET(
@@ -78,6 +79,10 @@ export async function PUT(
     // Parse request body
     const body = await request.json();
 
+    // Store old status to check if it changed
+    const oldStatus = existingJob.status;
+    const newStatus = body.status;
+
     // Transform form data to match database schema
 
     // Build location string
@@ -128,6 +133,25 @@ export async function PUT(
     if (error) {
       console.error('Error updating job:', error);
       return NextResponse.json({ error: 'Failed to update job' }, { status: 500 });
+    }
+
+    // Trigger AI question generation if job was just activated
+    if (oldStatus !== 'active' && newStatus === 'active') {
+      // Check if questions already exist
+      const { data: existingQuestions } = await supabase
+        .from('question_templates')
+        .select('id')
+        .eq('job_id', id)
+        .eq('is_active', true)
+        .single();
+
+      // Only generate if no active questions exist
+      if (!existingQuestions) {
+        // Generate questions asynchronously (non-blocking)
+        generateScreeningQuestions({ jobId: id, job }).catch((err) => {
+          console.error('Failed to generate questions:', err);
+        });
+      }
     }
 
     return NextResponse.json({ job }, { status: 200 });

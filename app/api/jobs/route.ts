@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { generateScreeningQuestions } from '@/lib/actions/generate-questions';
 
 // GET /api/jobs - List jobs (with optional filters)
 export async function GET(request: NextRequest) {
@@ -136,6 +137,14 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Error creating job:', error);
       return NextResponse.json({ error: 'Failed to create job' }, { status: 500 });
+    }
+
+    // Trigger AI question generation if job was created as active
+    if (job.status === 'active') {
+      // Generate questions asynchronously (non-blocking)
+      generateScreeningQuestions({ jobId: job.id, job }).catch((err) => {
+        console.error('Failed to generate questions:', err);
+      });
     }
 
     return NextResponse.json({ job }, { status: 201 });
