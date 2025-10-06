@@ -28,6 +28,10 @@ function JobsContent() {
       setSuccessMessage('Job published successfully!');
     } else if (success === 'draft') {
       setSuccessMessage('Job saved as draft!');
+    } else if (success === 'updated-published') {
+      setSuccessMessage('Job updated and published successfully!');
+    } else if (success === 'updated-draft') {
+      setSuccessMessage('Job updated and saved as draft!');
     }
   }, [searchParams]);
 
