@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Job } from '@/types/job';
@@ -10,7 +10,7 @@ import { PageLoader } from '@/components/ui/loading-spinner';
 import { ErrorMessage } from '@/components/ui/error-message';
 import { Plus } from 'lucide-react';
 
-export default function JobsPage() {
+function JobsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
@@ -200,5 +200,13 @@ export default function JobsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function JobsPage() {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <JobsContent />
+    </Suspense>
   );
 }
