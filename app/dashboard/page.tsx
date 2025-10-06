@@ -4,34 +4,55 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageLoader } from '@/components/ui/loading-spinner';
+import { ErrorMessage } from '@/components/ui/error-message';
 
 export default function DashboardPage() {
   const router = useRouter();
   const supabase = createClient();
   const [user, setUser] = useState<{ email?: string; user_metadata?: { full_name?: string } } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-      if (!user) {
-        router.push('/auth/signin');
-        return;
+        if (authError) {
+          setError(authError.message);
+          setLoading(false);
+          return;
+        }
+
+        if (!user) {
+          router.push('/auth/signin');
+          return;
+        }
+
+        setUser(user);
+        setLoading(false);
+      } catch (err) {
+        setError('An unexpected error occurred');
+        setLoading(false);
       }
-
-      setUser(user);
-      setLoading(false);
     };
 
     checkUser();
   }, [router, supabase]);
 
   if (loading) {
+    return <PageLoader />;
+  }
+
+  if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
-      </div>
+      <ErrorMessage
+        variant="page"
+        title="Authentication Error"
+        message={error}
+        onRetry={() => window.location.reload()}
+      />
     );
   }
 
