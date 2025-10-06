@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function DashboardPage() {
@@ -28,12 +27,6 @@ export default function DashboardPage() {
     checkUser();
   }, [router, supabase]);
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.push('/auth/signin');
-    router.refresh();
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -44,21 +37,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">AI Job Board</h1>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">
-              {user?.user_metadata?.full_name || user?.email}
-            </span>
-            <Button onClick={handleSignOut} variant="outline" size="sm">
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900">Welcome to your Dashboard</h2>
           <p className="mt-2 text-gray-600">
@@ -138,7 +117,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
