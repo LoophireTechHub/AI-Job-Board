@@ -35,6 +35,7 @@ An intelligent job application and interview management system powered by Claude
 - **UI Components**: shadcn/ui
 - **Authentication**: Supabase Auth
 - **Storage**: Supabase Storage (for resumes)
+- **Error Tracking**: Sentry
 
 ## Prerequisites
 
@@ -315,6 +316,58 @@ npm run lint
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key | Yes |
 | `SUPABASE_SERVICE_KEY` | Supabase service role key (server only) | Yes |
 | `ANTHROPIC_API_KEY` | Anthropic Claude API key | Yes |
+| `NEXT_PUBLIC_SENTRY_DSN` | Sentry error tracking DSN | No |
+| `SENTRY_ORG` | Sentry organization name | No |
+| `SENTRY_PROJECT` | Sentry project name | No |
+| `SENTRY_AUTH_TOKEN` | Sentry auth token for source maps | No |
+
+## Error Tracking with Sentry
+
+This application includes Sentry integration for production error tracking and monitoring.
+
+### Setting up Sentry (Optional)
+
+1. **Create a Sentry Account**
+   - Sign up at [sentry.io](https://sentry.io)
+   - Create a new Next.js project
+
+2. **Get Your DSN**
+   - Go to **Settings** → **Projects** → **Your Project**
+   - Copy the DSN (Data Source Name)
+
+3. **Add Environment Variables**
+
+   Update your `.env.local`:
+   ```env
+   NEXT_PUBLIC_SENTRY_DSN=https://your-dsn@sentry.io/project-id
+   SENTRY_ORG=your-org-name
+   SENTRY_PROJECT=your-project-name
+   SENTRY_AUTH_TOKEN=your-auth-token  # For source map uploads
+   ```
+
+4. **Configure in Vercel** (for production)
+   - Go to your Vercel project settings
+   - Add the same environment variables
+   - Deploy to activate error tracking
+
+### Features Enabled
+
+- **Error Tracking**: Automatic capture of client and server errors
+- **Session Replay**: Visual reproduction of user sessions with errors
+- **Performance Monitoring**: Track application performance metrics
+- **Source Maps**: Upload source maps for readable stack traces
+- **Breadcrumbs**: Track user actions leading to errors
+
+### Testing Error Tracking
+
+You can test Sentry integration by triggering an error:
+
+```typescript
+// Trigger a test error (remove after testing)
+throw new Error('Sentry test error');
+```
+
+Errors will appear in your Sentry dashboard at `https://sentry.io/organizations/your-org/issues/`
 
 ## Security Considerations
 
