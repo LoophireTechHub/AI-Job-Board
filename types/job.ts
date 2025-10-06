@@ -13,26 +13,21 @@ export interface Job {
 
   // Basic Info
   title: string;
-  company_name: string | null;
+  industry: string;
   department: string | null;
 
   // Location
-  location_type: LocationType;
-  location_city: string | null;
-  location_state: string | null;
-  location_country: string | null;
+  remote_policy: LocationType;
+  location: string | null;
 
   // Job Details
-  job_type: JobType;
   experience_level: ExperienceLevel;
-  salary_min: number | null;
-  salary_max: number | null;
-  salary_currency: string | null;
+  salary_range: string | null;
 
   // Content
   description: string;
-  requirements: string | null;
-  benefits: string | null;
+  requirements: string[] | null;
+  responsibilities?: string[] | null;
 
   // Status
   status: JobStatus;

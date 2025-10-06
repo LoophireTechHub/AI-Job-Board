@@ -80,11 +80,11 @@ export function JobCard({
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4" />
             <span>
-              {job.location_type === 'remote'
+              {job.remote_policy === 'remote'
                 ? 'Remote'
-                : job.location_type === 'hybrid'
-                ? `Hybrid - ${job.location_city || 'Location not specified'}`
-                : job.location_city || 'Location not specified'}
+                : job.remote_policy === 'hybrid'
+                ? `Hybrid${job.location ? ` - ${job.location}` : ''}`
+                : job.location || 'Location not specified'}
             </span>
           </div>
 
@@ -92,7 +92,7 @@ export function JobCard({
           <div className="flex items-center gap-2">
             <Briefcase className="h-4 w-4" />
             <span className="capitalize">
-              {job.job_type.replace('-', ' ')} • {job.experience_level} level
+              {job.industry || 'General'} • {job.experience_level} level
             </span>
           </div>
 
@@ -111,11 +111,10 @@ export function JobCard({
           </div>
 
           {/* Salary (if available) */}
-          {job.salary_min && job.salary_max && (
+          {job.salary_range && (
             <div className="mt-3 pt-3 border-t">
               <span className="font-semibold text-gray-900">
-                ${job.salary_min.toLocaleString()} - ${job.salary_max.toLocaleString()}
-                {job.salary_currency && ` ${job.salary_currency}`}
+                {job.salary_range}
               </span>
             </div>
           )}

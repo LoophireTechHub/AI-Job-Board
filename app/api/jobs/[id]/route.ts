@@ -78,24 +78,46 @@ export async function PUT(
     // Parse request body
     const body = await request.json();
 
+    // Transform form data to match database schema
+
+    // Build location string
+    const locationParts = [body.location_city, body.location_state, body.location_country].filter(Boolean);
+    const location = locationParts.length > 0 ? locationParts.join(', ') : null;
+
+    // Build salary range string
+    let salaryRange = null;
+    if (body.salary_min || body.salary_max) {
+      const currency = body.salary_currency || 'USD';
+      if (body.salary_min && body.salary_max) {
+        salaryRange = `${currency} ${body.salary_min} - ${body.salary_max}`;
+      } else if (body.salary_min) {
+        salaryRange = `${currency} ${body.salary_min}+`;
+      } else {
+        salaryRange = `Up to ${currency} ${body.salary_max}`;
+      }
+    }
+
+    // Convert requirements string to array
+    const requirements = body.requirements
+      ? body.requirements.split('\n').filter((line: string) => line.trim())
+      : [];
+
+    // Use job_type as industry if provided, otherwise use department or default
+    const industry = body.job_type || body.department || 'General';
+
     // Update job
     const { data: job, error } = await supabase
       .from('jobs')
       .update({
         title: body.title,
-        department: body.department,
-        location_type: body.location_type,
-        location_city: body.location_city,
-        location_state: body.location_state,
-        location_country: body.location_country,
-        job_type: body.job_type,
+        industry: industry,
+        department: body.department || null,
+        remote_policy: body.location_type,
+        location: location,
         experience_level: body.experience_level,
-        salary_min: body.salary_min,
-        salary_max: body.salary_max,
-        salary_currency: body.salary_currency,
+        salary_range: salaryRange,
         description: body.description,
-        requirements: body.requirements,
-        benefits: body.benefits,
+        requirements: requirements,
         status: body.status,
         updated_at: new Date().toISOString(),
       })

@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Validate required fields
-    const requiredFields = ['title', 'description', 'job_type', 'experience_level', 'location_type'];
+    const requiredFields = ['title', 'description', 'experience_level', 'location_type'];
     const missingFields = requiredFields.filter((field) => !body[field]);
 
     if (missingFields.length > 0) {
@@ -87,29 +87,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get company name from user metadata
-    const companyName = user.user_metadata?.company_name || user.email?.split('@')[0];
+    // Transform form data to match database schema
+
+    // Build location string
+    const locationParts = [body.location_city, body.location_state, body.location_country].filter(Boolean);
+    const location = locationParts.length > 0 ? locationParts.join(', ') : null;
+
+    // Build salary range string
+    let salaryRange = null;
+    if (body.salary_min || body.salary_max) {
+      const currency = body.salary_currency || 'USD';
+      if (body.salary_min && body.salary_max) {
+        salaryRange = `${currency} ${body.salary_min} - ${body.salary_max}`;
+      } else if (body.salary_min) {
+        salaryRange = `${currency} ${body.salary_min}+`;
+      } else {
+        salaryRange = `Up to ${currency} ${body.salary_max}`;
+      }
+    }
+
+    // Convert requirements string to array
+    const requirements = body.requirements
+      ? body.requirements.split('\n').filter((line: string) => line.trim())
+      : [];
+
+    // Use job_type as industry if provided, otherwise use department or default
+    const industry = body.job_type || body.department || 'General';
 
     // Create job
     const { data: job, error } = await supabase
       .from('jobs')
       .insert({
         created_by: user.id,
-        company_name: companyName,
         title: body.title,
+        industry: industry,
         department: body.department || null,
-        location_type: body.location_type,
-        location_city: body.location_city || null,
-        location_state: body.location_state || null,
-        location_country: body.location_country || 'US',
-        job_type: body.job_type,
+        remote_policy: body.location_type,
+        location: location,
         experience_level: body.experience_level,
-        salary_min: body.salary_min || null,
-        salary_max: body.salary_max || null,
-        salary_currency: body.salary_currency || 'USD',
+        salary_range: salaryRange,
         description: body.description,
-        requirements: body.requirements || null,
-        benefits: body.benefits || null,
+        requirements: requirements,
         status: body.status || 'draft',
       })
       .select()
