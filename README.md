@@ -449,6 +449,27 @@ For issues and questions:
 - Check existing documentation
 - Review Claude API docs: https://docs.anthropic.com
 
+## Development Status
+
+### ✅ Sprint 1 Complete (Foundation)
+- Authentication (sign up, sign in, password reset)
+- Dashboard layout with sidebar navigation
+- Error tracking with Sentry
+- Loading states and error handling
+- Deployed to Vercel
+
+### 🚀 Sprint 2 In Progress (Job Management)
+See [Sprint 2 Plan](./docs/SPRINT_2_PLAN.md) for details:
+- Job creation and management (CRUD)
+- Public job board
+- AI-powered interview question generation
+- Job status workflow
+
+### 📅 Upcoming Sprints
+- **Sprint 3**: Applications & AI Resume Parsing
+- **Sprint 4**: AI Screening & Candidate Scoring
+- **Sprint 5**: Polish & Launch
+
 ## Roadmap
 
 Future enhancements:

@@ -2,6 +2,8 @@
 
 Get your MVP sprints up and running in 30 minutes.
 
+> 🎉 **Sprint 1 Complete!** Authentication, dashboard, and deployment are done. Ready for Sprint 2? See [SPRINT_2_PLAN.md](./SPRINT_2_PLAN.md)
+
 ---
 
 ## ✅ What's Been Created
