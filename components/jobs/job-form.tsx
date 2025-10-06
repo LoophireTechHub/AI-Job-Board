@@ -259,22 +259,12 @@ export function JobForm({
             <Textarea
               id="requirements"
               rows={6}
-              placeholder="List the skills, experience, and qualifications needed..."
+              placeholder="List the skills, experience, and qualifications needed (one per line)..."
               {...register('requirements')}
             />
             {errors.requirements && (
               <p className="text-sm text-red-600">{errors.requirements.message}</p>
             )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="benefits">Benefits</Label>
-            <Textarea
-              id="benefits"
-              rows={4}
-              placeholder="Describe the benefits and perks offered..."
-              {...register('benefits')}
-            />
           </div>
         </CardContent>
       </Card>

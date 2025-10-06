@@ -29,8 +29,6 @@ export const jobFormSchema = z.object({
 
   requirements: z.string().min(20, 'Requirements must be at least 20 characters').max(3000).optional().or(z.literal('')),
 
-  benefits: z.string().max(2000).optional().or(z.literal('')),
-
   status: z.enum(['draft', 'active']).default('draft'),
 }).refine((data) => {
   // If salary_min and salary_max are both provided, max must be greater than min

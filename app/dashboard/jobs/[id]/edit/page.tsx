@@ -56,7 +56,41 @@ export default function EditJobPage() {
           return;
         }
 
-        setJob(jobData);
+        // Transform database format to form format
+        const formData: any = {
+          ...jobData,
+          location_type: jobData.remote_policy,
+          job_type: jobData.industry || 'full-time',
+          requirements: jobData.requirements ? jobData.requirements.join('\n') : '',
+        };
+
+        // Parse location back to city/state/country
+        if (jobData.location) {
+          const locationParts = jobData.location.split(', ');
+          if (locationParts.length >= 3) {
+            formData.location_city = locationParts[0];
+            formData.location_state = locationParts[1];
+            formData.location_country = locationParts[2];
+          } else if (locationParts.length === 2) {
+            formData.location_city = locationParts[0];
+            formData.location_state = locationParts[1];
+            formData.location_country = 'US';
+          }
+        }
+
+        // Parse salary range back to min/max/currency
+        if (jobData.salary_range) {
+          const salaryMatch = jobData.salary_range.match(/(\w+)\s+(\d+)(?:\s*-\s*(\d+))?/);
+          if (salaryMatch) {
+            formData.salary_currency = salaryMatch[1];
+            formData.salary_min = parseInt(salaryMatch[2]);
+            if (salaryMatch[3]) {
+              formData.salary_max = parseInt(salaryMatch[3]);
+            }
+          }
+        }
+
+        setJob(formData);
         setLoading(false);
       } catch (err) {
         setError('An unexpected error occurred');
