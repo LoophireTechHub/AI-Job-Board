@@ -3,7 +3,7 @@
 **Sprint Goal**: Companies can create, manage, and publish jobs with AI-generated questions
 
 **Duration**: 2 weeks
-**Status**: 🟢 In Progress (20% complete)
+**Status**: 🟢 In Progress (42% complete)
 
 ---
 
@@ -11,10 +11,10 @@
 
 | Metric | Value |
 |--------|-------|
-| **Issues Completed** | 2 / 10 |
-| **Story Points Done** | 7 / 36 (19%) |
+| **Issues Completed** | 4 / 10 |
+| **Story Points Done** | 15 / 36 (42%) |
 | **Days Elapsed** | 1 |
-| **Velocity** | 7 SP/day (excellent!) |
+| **Velocity** | 15 SP/day (excellent!) |
 
 ---
 
@@ -67,42 +67,68 @@
 
 ---
 
+### Issue #16: Job Creation Form (5 SP) ✅
+**Status**: CLOSED
+**Completed**: 2025-01-15
+
+**Deliverables**:
+- ✅ Full JobForm component with react-hook-form & Zod
+- ✅ Job creation page at /dashboard/jobs/new
+- ✅ Validation schema (lib/validations/job.ts)
+- ✅ Draft and Publish submission options
+- ✅ Real-time validation with error messages
+- ✅ Loading states and error handling
+- ✅ 4 card sections: Basic Info, Location, Compensation, Description
+- ✅ Conditional location fields for hybrid/onsite jobs
+
+**Quality Metrics**:
+- Form validation ✓
+- Success/error handling ✓
+- API integration ✓
+- UX polish ✓
+
+**Dependencies Installed**:
+- react-hook-form@^7.64.0
+- zod@^4.1.11
+- @hookform/resolvers@^5.2.2
+- @radix-ui/react-select@^2.2.6
+
+**Commit**: `c1b98dc`
+
+---
+
+### Issue #17: Job Listing Page (3 SP) ✅
+**Status**: CLOSED
+**Completed**: 2025-01-15
+
+**Deliverables**:
+- ✅ Job listing page at /dashboard/jobs
+- ✅ JobCard integration with company variant
+- ✅ Empty state with CTA
+- ✅ Success messages from URL params
+- ✅ Edit, delete, and status change actions
+- ✅ Responsive grid layout
+- ✅ Quick access buttons from main dashboard
+
+**Quality Metrics**:
+- Authentication guards ✓
+- Real-time updates ✓
+- Responsive design ✓
+- Clean UX ✓
+
+**Commit**: `c1b98dc`
+
+---
+
 ## 🔨 In Progress
 
-None currently - ready to start Issue #16
+None currently - ready to start Issue #18
 
 ---
 
 ## 📝 Remaining Issues
 
 ### HIGH PRIORITY (Week 1)
-
-#### Issue #16: Job Creation Form (5 SP)
-**Status**: OPEN
-**Priority**: HIGH
-**Dependencies**: #14 (done), #15 (done)
-
-**Tasks**:
-- [ ] Create `/dashboard/jobs/new` page
-- [ ] Build full JobForm with all fields
-- [ ] Add form validation (Zod)
-- [ ] Connect to API
-- [ ] Loading states
-- [ ] Error handling
-
----
-
-#### Issue #17: Job Listing Page (3 SP)
-**Status**: OPEN
-**Priority**: MEDIUM
-**Dependencies**: #14 (done)
-
-**Tasks**:
-- [ ] Create `/dashboard/jobs` page
-- [ ] Fetch jobs from API
-- [ ] Display job cards
-- [ ] Empty state
-- [ ] Loading skeleton
 
 ---
 
@@ -193,12 +219,13 @@ None currently - ready to start Issue #16
 
 ### Week 1 Goals
 - [x] Foundation components (Issues #14, #15) ✅
-- [ ] Job creation flow (Issue #16)
-- [ ] Job management (Issues #17, #18, #19)
+- [x] Job creation flow (Issue #16) ✅
+- [x] Job listing page (Issue #17) ✅
+- [ ] Job management (Issues #18, #19)
 - [ ] Status workflow (Issue #20)
 
 **Week 1 Target**: 22 SP (Issues #14-20)
-**Week 1 Progress**: 7 SP (32% of week 1 goal)
+**Week 1 Progress**: 15 SP (68% of week 1 goal - ahead of schedule!)
 
 ### Week 2 Goals
 - [ ] Public job board (Issue #21)
@@ -213,30 +240,31 @@ None currently - ready to start Issue #16
 ## 📈 Burndown Chart
 
 ```
-Day 1: 36 SP → 29 SP (7 SP completed)
+Day 1: 36 SP → 21 SP (15 SP completed)
 Day 2: TBD
 Day 3: TBD
 ...
 Day 14: 0 SP (target)
 ```
 
-**Current Rate**: 7 SP/day
+**Current Rate**: 15 SP/day
 **Required Rate**: 2.6 SP/day
-**Status**: 🟢 Ahead of schedule!
+**Status**: 🟢 Way ahead of schedule!
 
 ---
 
 ## 🚀 Next Actions
 
 ### Immediate (Today)
-1. Start Issue #16 (Job Creation Form)
-2. Implement form with Zod validation
-3. Connect to POST /api/jobs
+1. Start Issue #18 (Edit Job Functionality)
+2. Implement job edit page
+3. Connect to PUT /api/jobs/[id]
 
 ### This Week
-1. Complete Issues #16-20 (22 SP total)
-2. Deploy to staging
+1. Complete Issues #18-20 (7 SP remaining)
+2. Start public job board (Issue #21)
 3. Test job creation flow end-to-end
+4. Deploy to staging
 
 ### Next Week
 1. Build public job board
@@ -249,9 +277,12 @@ Day 14: 0 SP (target)
 
 - ✅ Strong foundation with reusable components
 - ✅ Complete API backend ready
-- ✅ Type-safe implementation
-- ✅ Ahead of schedule (19% done on day 1!)
+- ✅ Full job creation and listing flow working
+- ✅ Type-safe implementation throughout
+- ✅ Way ahead of schedule (42% done on day 1!)
 - ✅ Clean, well-documented code
+- ✅ Comprehensive form validation
+- ✅ Great UX with loading states and error handling
 
 ---
 
@@ -264,5 +295,5 @@ Day 14: 0 SP (target)
 
 ---
 
-**Last Updated**: 2025-01-15
+**Last Updated**: 2025-10-06
 **Next Update**: Daily or after each completed issue
