@@ -26,6 +26,7 @@ CREATE TABLE jobs (
 CREATE TABLE applications (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   job_id UUID REFERENCES jobs(id) ON DELETE CASCADE,
+  candidate_profile_id UUID REFERENCES candidate_profiles(id),
   candidate_name TEXT NOT NULL,
   candidate_email TEXT NOT NULL,
   candidate_phone TEXT,
@@ -39,7 +40,33 @@ CREATE TABLE applications (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 3. Candidates table (for tracking across multiple applications)
+-- 3. Candidate Profiles table (LinkedIn OAuth profiles)
+CREATE TABLE candidate_profiles (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) UNIQUE,
+
+  -- Basic Info
+  first_name VARCHAR(100),
+  last_name VARCHAR(100),
+  email VARCHAR(255) UNIQUE NOT NULL,
+  phone VARCHAR(50),
+
+  -- LinkedIn Data
+  linkedin_id VARCHAR(255) UNIQUE,
+  linkedin_url TEXT,
+  profile_picture_url TEXT,
+  headline VARCHAR(500),
+  location VARCHAR(255),
+
+  -- Profile Status
+  profile_completed BOOLEAN DEFAULT false,
+  last_synced_at TIMESTAMP WITH TIME ZONE,
+
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 4. Candidates table (for tracking across multiple applications)
 CREATE TABLE candidates (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   email TEXT UNIQUE NOT NULL,
@@ -53,7 +80,7 @@ CREATE TABLE candidates (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 4. Question Templates table (Claude-generated questions per job)
+-- 5. Question Templates table (Claude-generated questions per job)
 CREATE TABLE question_templates (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   job_id UUID REFERENCES jobs(id) ON DELETE CASCADE,
@@ -64,7 +91,7 @@ CREATE TABLE question_templates (
   generated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 5. AI Responses table (Claude analysis of candidate answers)
+-- 6. AI Responses table (Claude analysis of candidate answers)
 CREATE TABLE ai_responses (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   application_id UUID REFERENCES applications(id) ON DELETE CASCADE,
@@ -77,7 +104,7 @@ CREATE TABLE ai_responses (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 6. Interview Sessions table (for dynamic conversation flow)
+-- 7. Interview Sessions table (for dynamic conversation flow)
 CREATE TABLE interview_sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   application_id UUID REFERENCES applications(id) ON DELETE CASCADE,
@@ -90,7 +117,7 @@ CREATE TABLE interview_sessions (
   total_score DECIMAL(3,2)
 );
 
--- 7. Resume Embeddings table (for semantic search using Claude)
+-- 8. Resume Embeddings table (for semantic search using Claude)
 CREATE TABLE resume_embeddings (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   application_id UUID REFERENCES applications(id) ON DELETE CASCADE,
@@ -100,7 +127,7 @@ CREATE TABLE resume_embeddings (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 8. Audit Log table (track AI interactions)
+-- 9. Audit Log table (track AI interactions)
 CREATE TABLE audit_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   entity_type TEXT NOT NULL, -- 'application', 'question_generation', 'response_analysis'
@@ -117,6 +144,10 @@ CREATE TABLE audit_logs (
 CREATE INDEX idx_applications_job_id ON applications(job_id);
 CREATE INDEX idx_applications_status ON applications(status);
 CREATE INDEX idx_applications_email ON applications(candidate_email);
+CREATE INDEX idx_applications_candidate_profile_id ON applications(candidate_profile_id);
+CREATE INDEX idx_candidate_profiles_user_id ON candidate_profiles(user_id);
+CREATE INDEX idx_candidate_profiles_linkedin_id ON candidate_profiles(linkedin_id);
+CREATE INDEX idx_candidate_profiles_email ON candidate_profiles(email);
 CREATE INDEX idx_question_templates_job_id ON question_templates(job_id);
 CREATE INDEX idx_ai_responses_application_id ON ai_responses(application_id);
 CREATE INDEX idx_interview_sessions_application_id ON interview_sessions(application_id);
@@ -127,12 +158,26 @@ CREATE INDEX idx_jobs_status ON jobs(status);
 -- Row Level Security (RLS) Policies
 ALTER TABLE jobs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE applications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE candidate_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE candidates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE question_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_responses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE interview_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE resume_embeddings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+
+-- Candidate Profiles RLS Policies
+CREATE POLICY "Users can view own profile"
+  ON candidate_profiles FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own profile"
+  ON candidate_profiles FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own profile"
+  ON candidate_profiles FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
 
 -- Storage bucket for resumes
 INSERT INTO storage.buckets (id, name, public)
@@ -165,4 +210,7 @@ CREATE TRIGGER update_applications_updated_at BEFORE UPDATE ON applications
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_candidates_updated_at BEFORE UPDATE ON candidates
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_candidate_profiles_updated_at BEFORE UPDATE ON candidate_profiles
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

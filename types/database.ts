@@ -30,6 +30,7 @@ export interface Job {
 export interface Application {
   id: string;
   job_id: string;
+  candidate_profile_id?: string;
   candidate_name: string;
   candidate_email: string;
   candidate_phone?: string;
@@ -39,6 +40,24 @@ export interface Application {
   status: ApplicationStatus;
   overall_score?: number;
   ai_summary?: AISummary;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CandidateProfile {
+  id: string;
+  user_id: string;
+  first_name?: string;
+  last_name?: string;
+  email: string;
+  phone?: string;
+  linkedin_id?: string;
+  linkedin_url?: string;
+  profile_picture_url?: string;
+  headline?: string;
+  location?: string;
+  profile_completed: boolean;
+  last_synced_at?: string;
   created_at: string;
   updated_at: string;
 }
