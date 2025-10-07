@@ -2,43 +2,13 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { nanoid } from 'nanoid';
-
-const ALLOWED_FILE_TYPES = [
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-];
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+import { validateResumeFile } from './resume-validation';
 
 export interface UploadResult {
   success: boolean;
   url?: string;
   path?: string;
   error?: string;
-}
-
-/**
- * Validate a file for resume upload
- */
-export function validateResumeFile(file: File): { valid: boolean; error?: string } {
-  // Check file size
-  if (file.size > MAX_FILE_SIZE) {
-    return {
-      valid: false,
-      error: `File size exceeds 5MB limit. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB`,
-    };
-  }
-
-  // Check file type
-  if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-    return {
-      valid: false,
-      error: 'Invalid file type. Please upload a PDF, DOC, or DOCX file',
-    };
-  }
-
-  return { valid: true };
 }
 
 /**

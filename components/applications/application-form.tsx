@@ -10,7 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Upload, FileText, X, Loader2, CheckCircle } from 'lucide-react';
-import { uploadResume, validateResumeFile } from '@/lib/storage/resume-upload';
+import { uploadResume } from '@/lib/storage/resume-upload';
+import { validateResumeFile } from '@/lib/storage/resume-validation';
 
 const applicationSchema = z.object({
   candidate_name: z.string().min(1, 'Full name is required').max(255),
