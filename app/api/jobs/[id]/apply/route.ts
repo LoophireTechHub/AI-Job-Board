@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { parseResume } from '@/lib/ai/resume-parser';
 
 // Validation schema for job application submission
 const applicationSchema = z.object({
@@ -88,6 +89,18 @@ export async function POST(
         candidate_email: validatedData.candidate_email,
       },
     });
+
+    // Trigger resume parsing asynchronously (non-blocking)
+    if (validatedData.resume_url) {
+      // Extract storage path from URL
+      const urlParts = validatedData.resume_url.split('/');
+      const resumePath = urlParts.slice(urlParts.indexOf('resumes')).join('/');
+
+      // Parse resume in background (don't await)
+      parseResume(application.id, resumePath).catch((error) => {
+        console.error('Background resume parsing failed:', error);
+      });
+    }
 
     return NextResponse.json(application, { status: 201 });
   } catch (error) {
