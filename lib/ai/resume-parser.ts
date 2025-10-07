@@ -227,3 +227,25 @@ Important:
     };
   }
 }
+
+/**
+ * Convert full parsed resume data to simplified format for conversation manager
+ */
+export function simplifyResumeForConversation(resumeData: ResumeData | null): import('@/lib/ai/conversation-manager').ResumeData | undefined {
+  if (!resumeData) return undefined;
+
+  return {
+    summary: resumeData.summary || undefined,
+    experience: resumeData.experience?.map(exp =>
+      `${exp.position} at ${exp.company}${exp.is_current ? ' (Current)' : ''}`
+    ),
+    skills: [
+      ...(resumeData.skills?.technical || []),
+      ...(resumeData.skills?.certifications || [])
+    ].filter(Boolean),
+    education: resumeData.education?.map(edu =>
+      `${edu.degree} from ${edu.institution}${edu.field_of_study ? ` in ${edu.field_of_study}` : ''}`
+    ),
+    certifications: resumeData.skills?.certifications,
+  };
+}

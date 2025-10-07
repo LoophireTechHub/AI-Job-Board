@@ -33,6 +33,14 @@ export interface AIAnalysis {
   recommendation?: 'strong_yes' | 'yes' | 'maybe' | 'no';
 }
 
+export interface ResumeData {
+  summary?: string;
+  experience?: string[];
+  skills?: string[];
+  education?: string[];
+  certifications?: string[];
+}
+
 /**
  * Generate initial greeting and introduce first question
  */
@@ -41,11 +49,12 @@ export async function startInterview(params: {
   jobTitle: string;
   companyName?: string;
   questions: Question[];
+  resumeData?: ResumeData;
 }): Promise<{
   greeting: string;
   firstQuestion: Question;
 }> {
-  const { candidateName, jobTitle, companyName, questions } = params;
+  const { candidateName, jobTitle, companyName, questions, resumeData } = params;
 
   if (questions.length === 0) {
     throw new Error('No questions provided');
@@ -58,9 +67,22 @@ export async function startInterview(params: {
 - Be encouraging but professional
 - Keep responses concise (2-3 sentences max for greetings)`;
 
-  const userPrompt = `Generate a warm, professional greeting for ${candidateName} who is interviewing for the ${jobTitle} position${companyName ? ` at ${companyName}` : ''}. 
+  let resumeContext = '';
+  if (resumeData) {
+    const parts = [];
+    if (resumeData.summary) parts.push(`Summary: ${resumeData.summary}`);
+    if (resumeData.experience?.length) parts.push(`Experience: ${resumeData.experience.join(', ')}`);
+    if (resumeData.skills?.length) parts.push(`Skills: ${resumeData.skills.join(', ')}`);
+    if (parts.length > 0) {
+      resumeContext = `\n\nCandidate's Resume Highlights:\n${parts.join('\n')}`;
+    }
+  }
+
+  const userPrompt = `Generate a warm, professional greeting for ${candidateName} who is interviewing for the ${jobTitle} position${companyName ? ` at ${companyName}` : ''}. ${resumeContext}
 
 Then naturally introduce the first interview question: "${questions[0].text}"
+
+${resumeData ? 'You may briefly reference their background if relevant to make the greeting more personalized.' : ''}
 
 Keep it conversational and make the candidate feel at ease. Return ONLY the greeting and question introduction, no additional commentary.`;
 
@@ -98,6 +120,7 @@ export async function processAnswer(params: {
   candidateAnswer: string;
   remainingQuestions: Question[];
   jobTitle: string;
+  resumeData?: ResumeData;
 }): Promise<{
   analysis: AIAnalysis;
   needsFollowUp: boolean;
@@ -105,7 +128,7 @@ export async function processAnswer(params: {
   nextQuestion?: Question;
   transitionMessage: string;
 }> {
-  const { conversationHistory, currentQuestion, candidateAnswer, remainingQuestions, jobTitle } = params;
+  const { conversationHistory, currentQuestion, candidateAnswer, remainingQuestions, jobTitle, resumeData } = params;
 
   const systemPrompt = `You are an expert AI interviewer and evaluator. Your role is to:
 1. Analyze candidate responses objectively and fairly
@@ -116,11 +139,22 @@ export async function processAnswer(params: {
 
 Be fair, unbiased, and focused on job-relevant competencies.`;
 
+  let resumeContextForAnalysis = '';
+  if (resumeData) {
+    const parts = [];
+    if (resumeData.summary) parts.push(`Summary: ${resumeData.summary}`);
+    if (resumeData.experience?.length) parts.push(`Experience: ${resumeData.experience.slice(0, 3).join(', ')}`);
+    if (resumeData.skills?.length) parts.push(`Skills: ${resumeData.skills.join(', ')}`);
+    if (parts.length > 0) {
+      resumeContextForAnalysis = `\n\nCandidate's Resume Background:\n${parts.join('\n')}\n(Use this to verify claims and assess consistency with their stated background)\n`;
+    }
+  }
+
   const analysisPrompt = `Job Position: ${jobTitle}
 
 Question Asked: "${currentQuestion.text}"
 Question Type: ${currentQuestion.type}
-${currentQuestion.lookingFor ? `Looking for: ${currentQuestion.lookingFor.join(', ')}` : ''}
+${currentQuestion.lookingFor ? `Looking for: ${currentQuestion.lookingFor.join(', ')}` : ''}${resumeContextForAnalysis}
 
 Candidate's Response:
 "${candidateAnswer}"
@@ -142,6 +176,7 @@ Consider:
 - Communication clarity
 - Problem-solving approach (if applicable)
 - Cultural fit indicators
+${resumeData ? '- Consistency with resume background' : ''}
 
 Return ONLY valid JSON, no additional text.`;
 
