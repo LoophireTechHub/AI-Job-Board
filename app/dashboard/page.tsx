@@ -19,6 +19,13 @@ export default function DashboardPage() {
     activeJobs: 0,
     totalApplications: 0,
     candidatesScreened: 0,
+    applicationsThisWeek: 0,
+    applicationsByStatus: {
+      submitted: 0,
+      screening: 0,
+      interviewing: 0,
+      offer: 0,
+    },
   });
 
   useEffect(() => {
@@ -57,24 +64,59 @@ export default function DashboardPage() {
           .eq('created_by', user.id);
 
         let totalApplicationCount = 0;
+        let applicationsThisWeekCount = 0;
+        const statusCounts = {
+          submitted: 0,
+          screening: 0,
+          interviewing: 0,
+          offer: 0,
+        };
+
         if (!jobsError && userJobs && userJobs.length > 0) {
           const jobIds = userJobs.map(job => job.id);
+
+          // Total applications
           const { count: appCount, error: appCountError } = await supabase
             .from('applications')
             .select('*', { count: 'exact', head: true })
             .in('job_id', jobIds);
 
-          if (appCountError) {
-            console.error('Error fetching application count:', appCountError);
-          } else {
+          if (!appCountError) {
             totalApplicationCount = appCount || 0;
+          }
+
+          // Applications this week
+          const oneWeekAgo = new Date();
+          oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+          const { count: weekCount } = await supabase
+            .from('applications')
+            .select('*', { count: 'exact', head: true })
+            .in('job_id', jobIds)
+            .gte('created_at', oneWeekAgo.toISOString());
+
+          applicationsThisWeekCount = weekCount || 0;
+
+          // Applications by status
+          const { data: applications } = await supabase
+            .from('applications')
+            .select('status')
+            .in('job_id', jobIds);
+
+          if (applications) {
+            applications.forEach(app => {
+              if (app.status in statusCounts) {
+                statusCounts[app.status as keyof typeof statusCounts]++;
+              }
+            });
           }
         }
 
         setStats({
           activeJobs: activeJobCount || 0,
           totalApplications: totalApplicationCount,
-          candidatesScreened: 0, // TODO: Implement when AI screening is ready
+          candidatesScreened: statusCounts.screening + statusCounts.interviewing,
+          applicationsThisWeek: applicationsThisWeekCount,
+          applicationsByStatus: statusCounts,
         });
 
         setLoading(false);
@@ -112,11 +154,11 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
             <CardHeader>
               <CardTitle>Job Postings</CardTitle>
-              <CardDescription>Create and manage job listings</CardDescription>
+              <CardDescription>Active listings</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-blue-600">{stats.activeJobs}</p>
@@ -127,22 +169,63 @@ export default function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle>Applications</CardTitle>
-              <CardDescription>Review candidate applications</CardDescription>
+              <CardDescription>Total received</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-green-600">{stats.totalApplications}</p>
-              <p className="text-sm text-gray-500 mt-2">Total applications</p>
+              <p className="text-sm text-gray-500 mt-2">All time</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>AI Screening</CardTitle>
-              <CardDescription>Automated candidate evaluation</CardDescription>
+              <CardTitle>This Week</CardTitle>
+              <CardDescription>Recent applications</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-orange-600">{stats.applicationsThisWeek}</p>
+              <p className="text-sm text-gray-500 mt-2">Last 7 days</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>In Process</CardTitle>
+              <CardDescription>Active candidates</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-purple-600">{stats.candidatesScreened}</p>
-              <p className="text-sm text-gray-500 mt-2">Candidates screened</p>
+              <p className="text-sm text-gray-500 mt-2">Screening & interviewing</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Application Status Breakdown */}
+        <div className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Applications by Status</CardTitle>
+              <CardDescription>Current pipeline breakdown</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                  <p className="text-2xl font-bold text-blue-600">{stats.applicationsByStatus.submitted}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Submitted</p>
+                </div>
+                <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-950 rounded-lg">
+                  <p className="text-2xl font-bold text-yellow-600">{stats.applicationsByStatus.screening}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Screening</p>
+                </div>
+                <div className="text-center p-4 bg-purple-50 dark:bg-purple-950 rounded-lg">
+                  <p className="text-2xl font-bold text-purple-600">{stats.applicationsByStatus.interviewing}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Interviewing</p>
+                </div>
+                <div className="text-center p-4 bg-green-50 dark:bg-green-950 rounded-lg">
+                  <p className="text-2xl font-bold text-green-600">{stats.applicationsByStatus.offer}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Offer</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
