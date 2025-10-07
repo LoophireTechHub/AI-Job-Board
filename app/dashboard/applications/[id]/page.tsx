@@ -19,6 +19,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import Link from 'next/link';
+import { StatusUpdate } from '@/components/applications/status-update';
 
 export default async function ApplicationDetailPage({
   params,
@@ -301,7 +302,8 @@ export default async function ApplicationDetailPage({
             <CardHeader>
               <CardTitle>Actions</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-4">
+              <StatusUpdate applicationId={application.id} currentStatus={application.status} />
               {application.resume_url && (
                 <a
                   href={application.resume_url}
@@ -315,10 +317,12 @@ export default async function ApplicationDetailPage({
                   </Button>
                 </a>
               )}
-              <Button variant="outline" className="w-full">
-                <Mail className="mr-2 h-4 w-4" />
-                Send Email
-              </Button>
+              <a href={`mailto:${application.candidate_email}`} className="block">
+                <Button variant="outline" className="w-full">
+                  <Mail className="mr-2 h-4 w-4" />
+                  Send Email
+                </Button>
+              </a>
             </CardContent>
           </Card>
 
