@@ -179,6 +179,50 @@ CREATE POLICY "Users can insert own profile"
   ON candidate_profiles FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+-- Interview Sessions RLS Policies
+CREATE POLICY "Candidates can view own interview sessions"
+  ON interview_sessions FOR SELECT
+  USING (
+    application_id IN (
+      SELECT id FROM applications
+      WHERE candidate_profile_id IN (
+        SELECT id FROM candidate_profiles WHERE user_id = auth.uid()
+      )
+    )
+  );
+
+CREATE POLICY "Candidates can create interview sessions"
+  ON interview_sessions FOR INSERT
+  WITH CHECK (
+    application_id IN (
+      SELECT id FROM applications
+      WHERE candidate_profile_id IN (
+        SELECT id FROM candidate_profiles WHERE user_id = auth.uid()
+      )
+    )
+  );
+
+CREATE POLICY "Candidates can update own interview sessions"
+  ON interview_sessions FOR UPDATE
+  USING (
+    application_id IN (
+      SELECT id FROM applications
+      WHERE candidate_profile_id IN (
+        SELECT id FROM candidate_profiles WHERE user_id = auth.uid()
+      )
+    )
+  );
+
+CREATE POLICY "Companies can view interview sessions for their jobs"
+  ON interview_sessions FOR SELECT
+  USING (
+    application_id IN (
+      SELECT a.id FROM applications a
+      INNER JOIN jobs j ON a.job_id = j.id
+      WHERE j.created_by = auth.uid()
+    )
+  );
+
 -- Storage bucket for resumes
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('resumes', 'resumes', false);
