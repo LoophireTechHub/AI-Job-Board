@@ -150,7 +150,13 @@ export function ApplicationForm({
       setResumeFile(null);
       setResumeUrl('');
 
-      onSuccess?.(application.id);
+      // Redirect to success page or call onSuccess callback
+      if (onSuccess) {
+        onSuccess(application.id);
+      } else {
+        // Default redirect to success page
+        window.location.href = `/jobs/${jobId}/apply/success?email=${encodeURIComponent(data.candidate_email)}`;
+      }
     } catch (error) {
       console.error('Application submission error:', error);
       onError?.(error instanceof Error ? error.message : 'Failed to submit application');
