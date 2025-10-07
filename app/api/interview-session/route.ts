@@ -1,374 +1,217 @@
-// API Route: Interview Session Management
+import { createClient } from '@/lib/supabase/server';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
-import { NextRequest, NextResponse } from 'next/server';
-import { InterviewConversationManager } from '@/lib/claude/conversation-manager';
-import { createServiceRoleClient } from '@/lib/supabase/server';
-import { StartInterviewSessionRequest, SubmitAnswerRequest } from '@/types/api';
-import { Question } from '@/types/database';
+// Validation schemas
+const startSessionSchema = z.object({
+  applicationId: z.string().uuid('Invalid application ID'),
+  sessionType: z.enum(['screening', 'technical', 'behavioral', 'final']).default('screening'),
+});
 
-// POST: Start a new interview session
-export async function POST(req: NextRequest) {
+const getSessionSchema = z.object({
+  sessionId: z.string().uuid('Invalid session ID'),
+});
+
+/**
+ * POST /api/interview-session
+ * Start a new conversational interview session
+ */
+export async function POST(request: Request) {
   try {
-    const body: StartInterviewSessionRequest = await req.json();
+    const supabase = await createClient();
 
-    if (!body.applicationId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'applicationId is required',
-        },
-        { status: 400 }
-      );
-    }
+    // Get user (candidate) - sessions can be started without auth for public applications
+    const { data: { user } } = await supabase.auth.getUser();
 
-    const supabase = createServiceRoleClient();
+    const body = await request.json();
+    const validatedData = startSessionSchema.parse(body);
 
-    // Get application and job details
+    // Verify application exists
     const { data: application, error: appError } = await supabase
       .from('applications')
-      .select('*, jobs(*)')
-      .eq('id', body.applicationId)
+      .select('id, job_id, candidate_name, candidate_email, candidate_profile_id')
+      .eq('id', validatedData.applicationId)
       .single();
 
     if (appError || !application) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Application not found',
-        },
+        { success: false, error: 'Application not found' },
         { status: 404 }
+      );
+    }
+
+    // Check if session already exists for this application
+    const { data: existingSession } = await supabase
+      .from('interview_sessions')
+      .select('id, status')
+      .eq('application_id', validatedData.applicationId)
+      .eq('session_type', validatedData.sessionType)
+      .single();
+
+    if (existingSession) {
+      if (existingSession.status === 'completed') {
+        return NextResponse.json(
+          { success: false, error: 'Interview already completed' },
+          { status: 400 }
+        );
+      }
+
+      // Return existing session if in progress
+      return NextResponse.json(
+        {
+          success: true,
+          sessionId: existingSession.id,
+          message: 'Resuming existing interview session',
+          isResume: true
+        },
+        { status: 200 }
       );
     }
 
     // Get question template for the job
     const { data: questionTemplate, error: qtError } = await supabase
       .from('question_templates')
-      .select('*')
+      .select('id, questions')
       .eq('job_id', application.job_id)
-      .eq('is_active', true)
-      .order('generated_at', { ascending: false })
-      .limit(1)
       .single();
 
-    if (qtError || !questionTemplate) {
+    if (qtError || !questionTemplate || !questionTemplate.questions) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'No question template found for this job. Please generate questions first.',
-        },
-        { status: 404 }
+        { success: false, error: 'Interview questions not generated for this job' },
+        { status: 400 }
       );
     }
 
-    // Initialize conversation manager
-    const manager = new InterviewConversationManager(
-      application.candidate_name,
-      questionTemplate.questions as Question[]
-    );
+    const questions = questionTemplate.questions as any[];
 
-    const { message, questionId, tokensUsed } = await manager.getOpeningMessage();
-
-    // Create interview session in database
-    const { data: session, error: sessionError } = await supabase
+    // Create interview session
+    const { data: session, error: sessionError} = await supabase
       .from('interview_sessions')
       .insert({
-        application_id: body.applicationId,
-        session_type: body.sessionType || 'screening',
+        application_id: validatedData.applicationId,
+        session_type: validatedData.sessionType,
         status: 'in_progress',
-        conversation_history: manager.getHistory(),
+        conversation_history: [],
         current_question_index: 0,
       })
       .select()
       .single();
 
-    if (sessionError) {
-      throw sessionError;
+    if (sessionError || !session) {
+      console.error('Error creating session:', sessionError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to create interview session' },
+        { status: 500 }
+      );
     }
 
-    // Log the AI interaction
+    // Generate initial greeting and first question
+    // TODO: This will be replaced with Claude AI conversation manager in Issue #39
+    const greeting = `Hi ${application.candidate_name}! Thanks for taking the time to interview with us today. I'll be asking you a few questions to learn more about your experience and qualifications.`;
+
+    const firstQuestion = questions[0];
+
+    // Update session with initial conversation
+    const initialConversation = [
+      {
+        role: 'assistant',
+        content: greeting,
+        timestamp: new Date().toISOString(),
+      },
+      {
+        role: 'assistant',
+        content: firstQuestion.text,
+        timestamp: new Date().toISOString(),
+        questionId: firstQuestion.id,
+      },
+    ];
+
+    await supabase
+      .from('interview_sessions')
+      .update({ conversation_history: initialConversation })
+      .eq('id', session.id);
+
+    // Update application status to 'interviewing'
+    await supabase
+      .from('applications')
+      .update({ status: 'interviewing', updated_at: new Date().toISOString() })
+      .eq('id', validatedData.applicationId);
+
+    // Log to audit_logs
     await supabase.from('audit_logs').insert({
       entity_type: 'interview_session',
       entity_id: session.id,
-      action: 'start_session',
-      ai_model_used: 'claude-3-5-haiku-20241022',
-      tokens_used: tokensUsed,
+      action: 'interview_started',
       metadata: {
-        application_id: body.applicationId,
-        session_type: body.sessionType,
-        total_questions: questionTemplate.questions.length,
+        application_id: validatedData.applicationId,
+        session_type: validatedData.sessionType,
       },
     });
-
-    // Find the first question
-    const firstQuestion = (questionTemplate.questions as Question[]).find(q => q.id === questionId);
 
     return NextResponse.json({
       success: true,
       sessionId: session.id,
-      message,
-      firstQuestion: firstQuestion ? {
+      message: greeting,
+      firstQuestion: {
         id: firstQuestion.id,
         text: firstQuestion.text,
         type: firstQuestion.type,
-      } : null,
-      totalQuestions: questionTemplate.questions.length,
+      },
+      totalQuestions: questions.length,
       progress: 0,
-    });
+    }, { status: 201 });
+
   } catch (error) {
-    console.error('Error starting interview session:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid request data', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    console.error('Unexpected error:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to start interview session',
-      },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
 }
 
-// PUT: Submit an answer and get next question
-export async function PUT(req: NextRequest) {
+/**
+ * GET /api/interview-session?sessionId={sessionId}
+ * Retrieve interview session details
+ */
+export async function GET(request: Request) {
   try {
-    const body: SubmitAnswerRequest = await req.json();
+    const supabase = await createClient();
+    const { searchParams } = new URL(request.url);
 
-    if (!body.sessionId || !body.answer) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'sessionId and answer are required',
-        },
-        { status: 400 }
-      );
-    }
-
-    const supabase = createServiceRoleClient();
-
-    // Get session and related data
-    const { data: session, error: sessionError } = await supabase
-      .from('interview_sessions')
-      .select('*, applications(candidate_name, job_id)')
-      .eq('id', body.sessionId)
-      .single();
-
-    if (sessionError || !session) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Session not found',
-        },
-        { status: 404 }
-      );
-    }
-
-    if (session.status !== 'in_progress') {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Session is not in progress',
-        },
-        { status: 400 }
-      );
-    }
-
-    // Get question template
-    const { data: questionTemplate } = await supabase
-      .from('question_templates')
-      .select('questions')
-      .eq('job_id', session.applications.job_id)
-      .eq('is_active', true)
-      .order('generated_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (!questionTemplate) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Question template not found',
-        },
-        { status: 404 }
-      );
-    }
-
-    // Restore conversation manager from state
-    const manager = InterviewConversationManager.fromState(
-      session.applications.candidate_name,
-      {
-        conversationHistory: session.conversation_history,
-        remainingQuestions: questionTemplate.questions.filter(
-          (q: Question) => !session.conversation_history.some(
-            (msg: { metadata?: { question_id?: string } }) => msg.metadata?.question_id === q.id
-          )
-        ),
-        currentQuestionId: session.conversation_history[session.conversation_history.length - 1]?.metadata?.question_id || null,
-        isFollowUp: false,
-      }
-    );
-
-    // Process the answer
-    const { message, questionId, isFollowUp, tokensUsed } = await manager.processResponse(body.answer);
-
-    const isComplete = manager.isComplete();
-    const totalQuestions = (questionTemplate.questions as Question[]).length;
-    const progress = manager.getProgress(totalQuestions);
-
-    // Update session in database
-    const updateData: {
-      conversation_history: unknown;
-      current_question_index: number;
-      status?: string;
-      completed_at?: string;
-    } = {
-      conversation_history: manager.getHistory(),
-      current_question_index: totalQuestions - manager.getRemainingQuestionsCount(),
-    };
-
-    if (isComplete) {
-      updateData.status = 'completed';
-      updateData.completed_at = new Date().toISOString();
-    }
-
-    await supabase
-      .from('interview_sessions')
-      .update(updateData)
-      .eq('id', body.sessionId);
-
-    // If we asked a real question (not follow-up), save the response for analysis later
-    if (body.questionId && !isFollowUp) {
-      const question = (questionTemplate.questions as Question[]).find(q => q.id === body.questionId);
-
-      if (question) {
-        // Import analyzer
-        const { analyzeInterviewResponse } = await import('@/lib/claude/response-analyzer');
-
-        const analysisResult = await analyzeInterviewResponse({
-          questionText: question.text,
-          questionType: question.type,
-          lookingFor: question.lookingFor,
-          scoringKeywords: question.scoringKeywords,
-          candidateResponse: body.answer,
-          questionWeight: question.weight,
-        });
-
-        await supabase.from('ai_responses').insert({
-          application_id: session.application_id,
-          question_id: body.questionId,
-          question_text: question.text,
-          candidate_response: body.answer,
-          ai_analysis: analysisResult.analysis,
-          response_score: analysisResult.analysis.score,
-          keywords_matched: analysisResult.analysis.keywordMatches,
-        });
-      }
-    }
-
-    // Log the AI interaction
-    await supabase.from('audit_logs').insert({
-      entity_type: 'interview_session',
-      entity_id: body.sessionId,
-      action: 'submit_answer',
-      ai_model_used: 'claude-3-5-sonnet-20241022',
-      tokens_used: tokensUsed,
-      metadata: {
-        is_follow_up: isFollowUp,
-        is_complete: isComplete,
-        progress,
-      },
+    const validatedData = getSessionSchema.parse({
+      sessionId: searchParams.get('sessionId'),
     });
-
-    // Find the next question details if available
-    const nextQuestion = questionId
-      ? (questionTemplate.questions as Question[]).find(q => q.id === questionId)
-      : null;
-
-    const response: {
-      success: boolean;
-      message: string;
-      isFollowUp: boolean;
-      nextQuestion: { id: string; text: string; type: string } | null;
-      isComplete: boolean;
-      progress: number;
-      questionsRemaining: number;
-      sessionSummary?: {
-        totalScore: number;
-        questionsAnswered: number;
-        averageScore: number;
-      };
-    } = {
-      success: true,
-      message,
-      isFollowUp,
-      nextQuestion: nextQuestion ? {
-        id: nextQuestion.id,
-        text: nextQuestion.text,
-        type: nextQuestion.type,
-      } : null,
-      isComplete,
-      progress,
-      questionsRemaining: manager.getRemainingQuestionsCount(),
-    };
-
-    // If complete, generate session summary
-    if (isComplete) {
-      const { data: responses } = await supabase
-        .from('ai_responses')
-        .select('*')
-        .eq('application_id', session.application_id);
-
-      if (responses && responses.length > 0) {
-        const totalScore = responses.reduce((sum, r) => sum + (r.response_score || 0), 0) / responses.length;
-
-        await supabase
-          .from('interview_sessions')
-          .update({ total_score: totalScore })
-          .eq('id', body.sessionId);
-
-        response.sessionSummary = {
-          totalScore,
-          questionsAnswered: responses.length,
-          averageScore: totalScore,
-        };
-      }
-    }
-
-    return NextResponse.json(response);
-  } catch (error) {
-    console.error('Error submitting answer:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to submit answer',
-      },
-      { status: 500 }
-    );
-  }
-}
-
-// GET: Get interview session details
-export async function GET(req: NextRequest) {
-  try {
-    const sessionId = req.nextUrl.searchParams.get('sessionId');
-
-    if (!sessionId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'sessionId query parameter is required',
-        },
-        { status: 400 }
-      );
-    }
-
-    const supabase = createServiceRoleClient();
 
     const { data: session, error } = await supabase
       .from('interview_sessions')
-      .select('*, applications(candidate_name, candidate_email, jobs(title))')
-      .eq('id', sessionId)
+      .select(`
+        *,
+        applications!inner (
+          id,
+          candidate_name,
+          candidate_email,
+          jobs!inner (
+            id,
+            title
+          )
+        )
+      `)
+      .eq('id', validatedData.sessionId)
       .single();
 
-    if (error) {
-      throw error;
+    if (error || !session) {
+      return NextResponse.json(
+        { success: false, error: 'Session not found' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({
@@ -377,7 +220,8 @@ export async function GET(req: NextRequest) {
         id: session.id,
         status: session.status,
         sessionType: session.session_type,
-        conversationHistory: session.conversation_history,
+        conversationHistory: session.conversation_history || [],
+        currentQuestionIndex: session.current_question_index,
         startedAt: session.started_at,
         completedAt: session.completed_at,
         totalScore: session.total_score,
@@ -386,17 +230,23 @@ export async function GET(req: NextRequest) {
           email: session.applications.candidate_email,
         },
         job: {
-          title: session.applications.jobs?.title,
+          id: session.applications.jobs.id,
+          title: session.applications.jobs.title,
         },
       },
     });
+
   } catch (error) {
-    console.error('Error retrieving session:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid request data', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    console.error('Unexpected error:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to retrieve session',
-      },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
