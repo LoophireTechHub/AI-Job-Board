@@ -30,9 +30,9 @@ export default function ResetPasswordPage() {
   return (
         <div className="flex items-center justify-center min-h-screen">
               <div className="text-center">
-                      <p>Processing password reset...</p>p>
-                {error && <p className="text-red-500 mt-2">{error}</p>p>}
-                    </div>div>
-            </div>div>
+                      <p>Processing password reset...</p>
+                {error && <p className="text-red-500 mt-2">{error}</p>}
+                    </div>
+            </div>
       );
 }</div>
