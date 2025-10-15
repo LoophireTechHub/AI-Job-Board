@@ -35,4 +35,4 @@ export default function ResetPasswordPage() {
                     </div>
             </div>
       );
-}</div>
+}
