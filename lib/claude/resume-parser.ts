@@ -4,7 +4,6 @@
 import { createClaudeMessage, parseClaudeJSON, CLAUDE_MODELS } from './client';
 import { parseResumePrompt, SYSTEM_PROMPTS } from './prompts';
 import { ResumeData } from '@/types/database';
-import pdfParse from 'pdf-parse';
 
 interface ParseResumeParams {
   resumeText: string;
@@ -90,15 +89,15 @@ export async function parseResume(params: ParseResumeParams): Promise<ParseResum
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
   try {
+        // Dynamic import to avoid webpack bundling issues
+        const pdfParse = (await import('pdf-parse')).default;
         const data = await pdfParse(pdfBuffer);
         return data.text;
   } catch (error) {
         console.error('Error parsing PDF:', error);
-        throw new Error('Failed to parse PDF file');
+        throw new Error('Failed to parse PDF file. Please ensure pdf-parse is installed.');
   }
-}
-
-// Analyze resume for specific job match
+}yze resume for specific job match
 export async function analyzeResumeJobFit(params: {
   resumeData: ResumeData;
   jobTitle: string;
