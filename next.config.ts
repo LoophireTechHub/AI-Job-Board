@@ -9,13 +9,11 @@ const nextConfig: NextConfig = {
   },
   eslint: {
     ignoreDuringBuilds: true,
-  },
-,
-    // Externalize packages that don't work well with webpack bundling
-    experimental: {
-          serverComponentsExternalPackages: ['pdf-parse'],
-    },
-};
+};  // Externalize packages that don't work well with webpack bundling
+  experimental: {
+        serverComponentsExternalPackages: ['pdf-parse'],
+          },
+          };
 
 export default withSentryConfig(nextConfig, {
   // For all available options, see:
