@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   },
   eslint: {
     ignoreDuringBuilds: true,
-};  // Externalize packages that don't work well with webpack bundling
+}, // Externalize packages that don't work well with webpack bundling
   experimental: {
         serverComponentsExternalPackages: ['pdf-parse'],
           },
