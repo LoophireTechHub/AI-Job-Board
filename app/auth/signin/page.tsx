@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { ErrorMessage } from '@/components/ui/error-message';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -106,9 +107,11 @@ export default function SignInPage() {
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
-                {error}
-              </div>
+              <ErrorMessage
+                title="Sign In Failed"
+                message={error}
+                variant="inline"
+              />
             )}
 
             <Button type="submit" className="w-full" disabled={loading}>

@@ -1,3 +1,4 @@
+
 // Claude-powered Resume Parser
 
 import { createClaudeMessage, parseClaudeJSON, CLAUDE_MODELS } from './client';
@@ -87,16 +88,16 @@ export async function parseResume(params: ParseResumeParams): Promise<ParseResum
 // Extract text from PDF resume (you'll need a PDF parsing library)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
-  // This is a placeholder - implement with a library like pdf-parse
-  // npm install pdf-parse @types/pdf-parse
-  // const pdfParse = require('pdf-parse');
-  // const data = await pdfParse(pdfBuffer);
-  // return data.text;
-
-  throw new Error('PDF parsing not yet implemented. Please use a PDF parsing library.');
-}
-
-// Analyze resume for specific job match
+  try {
+        // Dynamic import to avoid webpack bundling issues
+        const pdfParse = (await import('pdf-parse')).default;
+        const data = await pdfParse(pdfBuffer);
+        return data.text;
+  } catch (error) {
+        console.error('Error parsing PDF:', error);
+        throw new Error('Failed to parse PDF file. Please ensure pdf-parse is installed.');
+  }
+}yze resume for specific job match
 export async function analyzeResumeJobFit(params: {
   resumeData: ResumeData;
   jobTitle: string;
